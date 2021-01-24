@@ -22,56 +22,52 @@ public class CryptoUtilities {
         return new CryptoUtilities();
     }
 
-    public void encryptAndSendMessage(final String message, Asset asset) {
+    public void encryptAndSendMessage(final String message) {
         try {
-            final SecretKeySpec keySpec = new SecretKeySpec(asset.getSharedKey(), "DES");
+            final SecretKeySpec keySpec = new SecretKeySpec(Asset.sharedKey, "DES");
             final Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, keySpec);
             final byte[] encryptedMessage = cipher.doFinal(message.getBytes());
             System.out.println("encrypted message --> " + Base64.getEncoder().encodeToString(encryptedMessage));
-            CryptoUtilities.getInstance().receiveAndDecryptMessage(encryptedMessage, asset);
+            CryptoUtilities.getInstance().receiveAndDecryptMessage(encryptedMessage);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
 
-    public Asset generateCommonSecretKeyDES(Asset asset) {
+    public void generateCommonSecretKeyDES() {
         try {
             final KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
-            keyAgreement.init(asset.getPrivateKey());
-            keyAgreement.doPhase(asset.getReceivedPublicKey(), true);
-            asset.setSharedKey(shortenSecretKey(keyAgreement.generateSecret()));
+            keyAgreement.init(Asset.privateKey);
+            keyAgreement.doPhase(Asset.receivedPublicKey, true);
+            Asset.sharedKey = (shortenSecretKey(keyAgreement.generateSecret()));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return asset;
     }
 
-    public Asset generateCommonSecretKeyAES(Asset asset) {
+    public void generateCommonSecretKeyAES() {
         try {
             final KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
-            keyAgreement.init(asset.getPrivateKey());
-            keyAgreement.doPhase(asset.getReceivedPublicKey(), true);
-            asset.setSharedKey(keyAgreement.generateSecret());
+            keyAgreement.init(Asset.privateKey);
+            keyAgreement.doPhase(Asset.receivedPublicKey, true);
+            Asset.sharedKey = (keyAgreement.generateSecret());
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return asset;
     }
 
-    public Asset generateKeys() {
-        Asset asset = new Asset();
+    public void generateKeys() {
         try {
             final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
             keyPairGenerator.initialize(512);
             final KeyPair keyPair = keyPairGenerator.generateKeyPair();
-            asset.setPrivateKey(keyPair.getPrivate());
-            asset.setPublicKey(keyPair.getPublic());
+            Asset.privateKey = (keyPair.getPrivate());
+            Asset.publicKey = (keyPair.getPublic());
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return asset;
     }
 
     public PublicKey getExchangedPublicKey(byte[] publicKeyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException {
@@ -86,13 +82,13 @@ public class CryptoUtilities {
         return keyFactory.generatePrivate(privateKeySpec);
     }
 
-    public void receiveAndDecryptMessage(final byte[] message, Asset asset) {
+    public void receiveAndDecryptMessage(final byte[] message) {
         try {
-            final SecretKeySpec keySpec = new SecretKeySpec(asset.getSharedKey(), "DES");
+            final SecretKeySpec keySpec = new SecretKeySpec(Asset.sharedKey, "DES");
             final Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, keySpec);
-            asset.setSecretMessage(new String(cipher.doFinal(message)));
-            System.out.println("decrypted message --> " + asset.getSecretMessage());
+            Asset.secretMessage = (new String(cipher.doFinal(message)));
+            System.out.println("decrypted message --> " + Asset.secretMessage);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -111,23 +107,23 @@ public class CryptoUtilities {
         return null;
     }
 
-    public void setKey(byte[] key, Asset asset) {
+    public void setKey(byte[] key) {
         MessageDigest sha = null;
         try {
             sha = MessageDigest.getInstance("SHA-1");
             key = sha.digest(key);
             key = Arrays.copyOf(key, 16);
-            asset.setSecretKey(new SecretKeySpec(key, "AES"));
+            Asset.secretKey = (new SecretKeySpec(key, "AES"));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
     }
 
-    public String encrypt(String strToEncrypt, Asset asset) {
+    public String encrypt(String strToEncrypt) {
         try {
-            setKey(asset.getSharedKey(), asset);
+            setKey(Asset.sharedKey);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, asset.getSecretKey());
+            cipher.init(Cipher.ENCRYPT_MODE, Asset.secretKey);
             return Base64.getEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")));
         } catch (Exception e) {
             System.out.println("Error while encrypting: " + e.toString());
@@ -135,11 +131,11 @@ public class CryptoUtilities {
         return null;
     }
 
-    public String decrypt(String strToDecrypt, Asset asset) {
+    public String decrypt(String strToDecrypt) {
         try {
-            setKey(asset.getSharedKey(), asset);
+            setKey(Asset.sharedKey);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
-            cipher.init(Cipher.DECRYPT_MODE, asset.getSecretKey());
+            cipher.init(Cipher.DECRYPT_MODE, Asset.secretKey);
             return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
         } catch (Exception e) {
             System.out.println("Error while decrypting: " + e.toString());

@@ -1,22 +1,15 @@
 
 package com.pyruz.cryptography.bob.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import javax.crypto.spec.SecretKeySpec;
-import java.security.*;
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
 public class Asset {
-    private PrivateKey privateKey;
-    private PublicKey publicKey;
-    private PublicKey receivedPublicKey;
-    private byte[] sharedKey;
-    private String secretMessage;
-    private SecretKeySpec secretKey;
+    public static PrivateKey privateKey;
+    public static PublicKey publicKey;
+    public static PublicKey receivedPublicKey;
+    public static byte[] sharedKey;
+    public static String secretMessage;
+    public static SecretKeySpec secretKey;
 }

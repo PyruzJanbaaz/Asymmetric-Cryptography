@@ -2,9 +2,11 @@ package com.pyruz.cryptography.bob.controller;
 
 import com.pyruz.cryptography.bob.model.Asset;
 import com.pyruz.cryptography.bob.utility.CryptoUtilities;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,36 +18,71 @@ import java.util.Base64;
 
 import static org.apache.http.protocol.HTTP.USER_AGENT;
 
-@RequestMapping("/api/**")
+@RequestMapping("/api")
 @RestController
 public class BobController {
 
-    @RequestMapping(method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public String index(HttpServletRequest request) throws Exception {
-        Asset asset = new Asset();
-        asset=  CryptoUtilities.getInstance().generateKeys();
-        if (request.getHeader("key") != null) {
-            asset.setReceivedPublicKey(CryptoUtilities.getInstance().getExchangedPublicKey(Base64.getDecoder().decode(request.getHeader("key"))));
-            //==================== DES ===================\\
-            CryptoUtilities.getInstance().generateCommonSecretKeyDES(asset);
-            CryptoUtilities.getInstance().encryptAndSendMessage("test DES", asset);
-            //==================== AES ===================\\
-            CryptoUtilities.getInstance().generateCommonSecretKeyAES(asset);
-            String encrypted = CryptoUtilities.getInstance().encrypt("test AES" , asset);
-            System.out.println("encrypted --> " + encrypted);
-            String decrypted = CryptoUtilities.getInstance().decrypt(encrypted, asset);
-            System.out.println("decrypted --> " + decrypted);
-        }
-        return "OK";
+    @GetMapping("/v1/encrypt")
+    public ResponseEntity<String[]> encrypt(@RequestParam String plainText) throws Exception {
+        //-> DES
+        CryptoUtilities.getInstance().generateCommonSecretKeyDES();
+        //-> AES
+        CryptoUtilities.getInstance().generateCommonSecretKeyAES();
+        //-> ENCRYPT
+        String encrypted = CryptoUtilities.getInstance().encrypt(plainText);
+        String[] result = new String[]{
+                "PlainText -> " + plainText,
+                "Encrypted -> " + encrypted,
+                "Decrypted -> " + sendToAlice("http://localhost:8081/api/v1/decrypt", null, encrypted)
+        };
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    public static String sendByGetMethod(String targetUrl, String key) throws Exception {
+
+    @GetMapping("/v1/decrypt")
+    public String decrypt(HttpServletRequest request) {
+        if (request.getHeader("text") != null) {
+            //-> DES
+            CryptoUtilities.getInstance().generateCommonSecretKeyDES();
+            //-> AES
+            CryptoUtilities.getInstance().generateCommonSecretKeyAES();
+            //-> DECRYPT
+            String decrypted = CryptoUtilities.getInstance().decrypt(request.getHeader("text"));
+            System.out.println("decrypted --> " + decrypted);
+            return decrypted;
+        } else {
+            return "Something is wrong!";
+        }
+    }
+
+
+    @GetMapping("/v1/exchange")
+    public ResponseEntity<String> exchangeKeys(HttpServletRequest request) throws Exception {
+        CryptoUtilities.getInstance().generateKeys();
+        String bobEncodedPublicKey = Base64.getEncoder().encodeToString(Asset.publicKey.getEncoded());
+        System.out.println("Bob encodedPublicKey --> " + bobEncodedPublicKey);
+        if (request.getHeader("key") != null) {
+            Asset.receivedPublicKey = (CryptoUtilities.getInstance().getExchangedPublicKey(Base64.getDecoder().decode(request.getHeader("key"))));
+        } else {
+            Asset.receivedPublicKey = CryptoUtilities.getInstance().getExchangedPublicKey(
+                    Base64.getDecoder().decode(
+                            sendToAlice("http://localhost:8081/api/v1/exchange", bobEncodedPublicKey, null)
+                    )
+            );
+        }
+        return new ResponseEntity<>(bobEncodedPublicKey, HttpStatus.OK);
+    }
+
+    public static String sendToAlice(String targetUrl, String key, String text) throws Exception {
         String url = targetUrl;
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
         con.setRequestMethod("GET");
         con.setRequestProperty("User-Agent", USER_AGENT);
-        con.setRequestProperty("key", key);
+        if (key != null)
+            con.setRequestProperty("key", key);
+        if (text != null)
+            con.setRequestProperty("text", text);
         int responseCode = con.getResponseCode();
         System.out.println("Sending 'GET' request to URL : " + url);
         System.out.println("Response Code : " + responseCode);
