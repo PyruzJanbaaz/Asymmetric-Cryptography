@@ -10,7 +10,7 @@ I create a multi module Maven project for show how to implement asymmetric crypt
 # How it works...
 In asymmetric (public key) cryptography, both communicating parties (i.e. both Alice and Bob) have two keys of their own — just to be clear, that's four keys total. Each party has their own public key, which they share with the world, and their own private key which they ... well, which they keep private, of course but, more than that, which they keep as a closely guarded secret. The magic of public key cryptography is that a message encrypted with the public key can only be decrypted with the private key. Alice will encrypt her message with Bob's public key, and even though Eve knows she used Bob's public key, and even though Eve knows Bob's public key herself, she is unable to decrypt the message. Only Bob, using his secret key, can decrypt the message ... assuming he's kept it secret, of course.
 
-![alt text](https://www.researchgate.net/profile/Ons_Jallouli/publication/321123382/figure/fig2/AS:561500483002368@1510883555030/Asymmetric-encryption-primitive.png)
+![alt text](https://sectigostore.com/blog/wp-content/uploads/2020/04/types-of-encryption-asymmetric-encryption.png)
 
 # Usage
 Run both of the projects
