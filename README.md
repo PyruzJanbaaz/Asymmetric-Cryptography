@@ -15,5 +15,4 @@ In asymmetric (public key) cryptography, both communicating parties (i.e. both A
 # Usage
 Run both of the projects
 - Call http://localhost:8081/api/v1/exchange for exchange the public keys between Alice and Bob
-- Call http://localhost:8081/api/v1/encrypt plus a string as a parameter (plainText) for testing the encryption by Alice's private key and decryption of the encrypted text by Bob with Alice's public key.
-
+- Call http://localhost:8081/api/v1/encrypt plus a string as a parameter (plainText) for testing the encryption.
